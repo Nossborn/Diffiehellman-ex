@@ -7,7 +7,7 @@ from Diffiehellman_Bob import Bob
 import time
 
 def noCommonPrimeFactor(i, N):
-	NPrimeFactors = primeFactors(N)
+	NPrimeFactors = primeFactors(N) #This doesn't need to be recalculated every time...
 	iPrimeFactors = primeFactors(i)
 	return len(list(set(NPrimeFactors).intersection(iPrimeFactors))) == 0
 
@@ -32,75 +32,84 @@ def primeFactors(n):
 		primeFactors.append(n)
 	return primeFactors
 
-def genPeriod(n, N):
-	genPeriodList = []
+def getGeneratorPeriodList(n, N):
+	generatorPeriodList = []
 	i = 1
-	j = 0
 	noOccurrenceOf1 = True
 	while noOccurrenceOf1:
 		element = (n**i) % N
-		genPeriodList.append(element)
+		generatorPeriodList.append(element)
 		if element == 1:
 			noOccurrenceOf1 = False
-		i = i+1
-	print("Completed",i)
-	return genPeriodList
+		else:
+			i += 1
+	return generatorPeriodList
 
 
-def findGs(N):
+def getCoprimeList(N):
 	coprimeList = []
 	i = 1
 	while i < N:
 		if noCommonPrimeFactor(i, N):
 			coprimeList.append(i)
-		i = i + 1
+		i += 1
+	return coprimeList
 
-	gCoprimesLists = []
+
+def findGenerators(N, coprimeList):
+	generators = []
 	j = 0
 	for n in coprimeList:
-		r = genPeriod(n, N)
-		if len(r) == N-1:
-			gCoprimesLists.append(r)
+		r = getGeneratorPeriodList(n, N)
+		if len(r) == len(coprimeList):
+			generators.append(r[0])
 		j += 1
-		print("%d of %d" % (j,len(coprimeList)))
+		print("%d of %d in coprime list" % (j,len(coprimeList)))
 
-	if len(gCoprimesLists) == 0:
+	if len(generators) == 0:
 		print("No generators for: ", N)
 		quit()
-	return gCoprimesLists, coprimeList
+	print("\n")
+	return generators
 
-def selectG(gLists):
-	i = randint(0, len(gLists)-1)
-	return gLists[i][0]
+def selectGenerator(generators):
+	i = randint(0, len(generators)-1)
+	return generators[i]
 
-startTime = time.time()
 
-N = 2651
-print("Number N:\t", N)
-findGsRes = findGs(N) #Contains the generator numbers period list
-gLists = findGsRes[0]
-coprimeList = findGsRes[1]
-print("Generators:\t", gLists[0][0], " ", gLists[1][0])
-g = selectG(gLists)
-print("Selected G:\t", g)
+def main():
+	startTime = time.time()
 
-time2 = time.time() - startTime
-print("Basics time:\t", str(round(time2, 6)) +"s")
+	N = 11
+	print("Number N:\t", N)
+	coprimeList = getCoprimeList(N)
+	generators = findGenerators(N, coprimeList) # This is very slow
+	
+	print("Generators:\n" + str(generators))
 
-alice = Alice(N, g, coprimeList)
-bob = Bob(N, g, coprimeList)
+	g = selectGenerator(generators)
+	print("Selected G:\t", g)
 
-alice.selectPrivateA()
-gAMod = alice.computeGAMod()
-bob.selectPrivateB()
-gBMod = bob.computeGBMod()
+	gTime = time.time() - startTime
+	print("Generator time:\t", str(round(gTime, 4)) +"s")
 
-alice.receiveGBMod(gBMod)
-bob.receiveGAMod(gAMod)
+	alice = Alice(N, g, coprimeList)
+	bob = Bob(N, g, coprimeList)
 
-alice.computeGABMod()
-bob.computeGABMod()
+	alice.selectPrivateA()
+	gAMod = alice.computeGAMod()
+	bob.selectPrivateB()
+	gBMod = bob.computeGBMod()
 
-time3 = time.time() - startTime
-print("End time:\t", str(round(time3 - time2, 6)) +"s")
-print("End time:\t", str(round(time3, 6)) +"s")
+	alice.receiveGBMod(gBMod)
+	bob.receiveGAMod(gAMod)
+
+	alice.computeGABMod()
+	bob.computeGABMod()
+
+	totalTime = time.time() - startTime
+	print("Key exchange time:\t", str(round(totalTime - gTime, 4)) +"s")
+	print("\nTotal elapsed time:\t", str(round(totalTime, 4)) +"s")
+
+if(__name__ == '__main__'):
+	main()
