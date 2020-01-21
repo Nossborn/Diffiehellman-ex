@@ -22,4 +22,4 @@ $ python db_handler.py [start of range] [end of range]
 Where all generating seeds in the range are added to the database (Note: for adding a single seed, make the *start of range* and *end of range* the same number).
 
 ## Disclaimer
-This is project is purely for education purposes and is not intended, or suited, to be used in a real environment.
+This is project is purely for educational purposes and is not intended, or suited, to be used in a real environment.
