@@ -1,8 +1,9 @@
 from random import randint
-import time
+import argparse
+#from time import time
 
-from diffiehellman_Alice import Alice
-from diffiehellman_Bob import Bob
+from Diffiehellman_Alice import Alice
+from Diffiehellman_Bob import Bob
 
 from base import getCoprimeList
 
@@ -17,22 +18,28 @@ def load_generators(N):
 	return db.retrieve_generators(N)
 
 def main():
-	startTime = time.time()
+	#startTime = time()
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-N', dest='seed', type=int, default=0, help="The integer seed for the key exchange")
 
-	N = 998
+	N = parser.parse_args().seed
+
 	print("Number N:\t", N)
 	coprimeList = getCoprimeList(N)
-	print(time.time() - startTime)
+	#print(time() - startTime)
 	#generators = findGenerators(N, coprimeList) # This is very slow
 	generators = load_generators(N)
+	if(len(generators)==0):
+		print("Bad seed! Try again using a different seed.")
+		return
 
 	print("Generators:\n" + str(generators))
 
 	g = selectGenerator(generators)
 	print("Selected G:\t", g)
 
-	gTime = time.time() - startTime
-	print("Generator time:\t", str(round(gTime, 4)) +"s")
+	#gTime = time() - startTime
+	#print("Generator time:\t", str(round(gTime, 4)) +"s")
 
 	alice = Alice(N, g, coprimeList)
 	bob = Bob(N, g, coprimeList)
@@ -48,9 +55,9 @@ def main():
 	alice.computeGABMod()
 	bob.computeGABMod()
 
-	totalTime = time.time() - startTime
-	print("Key exchange time:\t", str(round(totalTime - gTime, 4)) +"s")
-	print("\nTotal elapsed time:\t", str(round(totalTime, 4)) +"s")
+	#totalTime = time() - startTime
+	#print("Key exchange time:\t", str(round(totalTime - gTime, 4)) +"s")
+	#print("\nTotal elapsed time:\t", str(round(totalTime, 4)) +"s")
 
 if(__name__ == '__main__'):
 	main()

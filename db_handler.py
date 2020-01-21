@@ -1,6 +1,7 @@
 import sqlite3
-from sqlite3 import Error
 import os.path
+from sys import argv
+from sqlite3 import Error
 
 from base import getCoprimeList
 from base import findGenerators
@@ -20,17 +21,14 @@ def create_tables(conn):
 
 def build_table(conn, startN, endN):
 	c = conn.cursor()
-
-	c.execute('SELECT * FROM generators ORDER BY N DESC LIMIT 1')
-	lastN = c.fetchall()[0][0]
-	if startN < lastN:
-		if endN < lastN:
-			print("Range already in database")
-			return False
-		startN = lastN + 1
 	
 	n = startN
 	while n <= endN:
+		c.execute('SELECT N FROM generators WHERE N = ?', (n,))
+		if len(c.fetchall()) != 0:
+			n += 1
+			continue
+
 		coprimeList = getCoprimeList(n)
 		gs = findGenerators(n, coprimeList) # This is very slow
 		if len(gs) == 0:
@@ -45,8 +43,12 @@ def build_table(conn, startN, endN):
 def retrieve_generators(N):
 	conn = create_connection("generators.db")
 	c = conn.cursor()
+	build_table(conn, N, N)
 	c.execute('SELECT Generators FROM generators WHERE N = ?', (N,))
-	generators = ((c.fetchall())[0])[0].split(',')
+	try:
+		generators = ((c.fetchall())[0])[0].split(',')
+	except:
+		generators = []
 	conn.close()
 	generators = list(map(int, generators))
 	return generators
@@ -54,7 +56,7 @@ def retrieve_generators(N):
 def main():
 	conn = create_connection("generators.db")
 	create_tables(conn)
-	build_table(conn, 0, 1010)
+	build_table(conn, int(argv[1]), int(argv[2]))
 	conn.close()
 
 if __name__ == '__main__':
